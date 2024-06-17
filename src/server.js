@@ -28,12 +28,21 @@ export const setupServer = () => {
     });
 
     app.get('/contacts', async (req, res) => {
-        const contacts = await getAllContacts();
+        try {
+            const contacts = await getAllContacts();
 
-        res.status(200).json({
-            data: contacts,
-            message: 'Successfully found contacts',
-        });
+            return res.status(200).json({
+                status: 200,
+                data: contacts,
+                message: 'Successfully found contacts',
+            });
+        } catch (error) {
+            return res.status(500).json({
+                status: 500,
+                message: 'Something went wrong',
+                error: error.message
+            });
+        }
     });
 
     app.get('/contacts/:contactId', async (req, res) => {
@@ -49,17 +58,19 @@ export const setupServer = () => {
         const contact = await getContactById(contactId);
 
             if (!contact) {
-                res.status(404).json({
+                return res.status(404).json({
                     message: 'Contact not found',
                 });
             }
 
-            res.status(200).json({
+            return res.status(200).json({
+                status: 200,
                 data: contact,
                 message: `Successfully found contact with id ${contactId}!`
             });
         } catch (error) {
-            res.status(500).json({
+            return res.status(500).json({
+                status: 500,
                 message: 'Something went wrong',
                 error: error.message,
             });
@@ -67,13 +78,15 @@ export const setupServer = () => {
     });
 
     app.use("*", (req, res) => {
-        res.status(404).json({
+        return res.status(404).json({
+            status: 404,
             message: "Not Found"
         });
     });
 
     app.use((err, req, res) => {
-        res.status(500).json({
+        return res.status(500).json({
+            status: 500,
             message: "Something went wrong",
             error: err.message,
         });
