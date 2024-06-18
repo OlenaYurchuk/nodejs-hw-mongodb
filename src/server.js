@@ -46,6 +46,7 @@ export const setupServer = () => {
 
         if (!mongoose.Types.ObjectId.isValid(contactId)) {
             return res.status(400).json({
+                status: 400,
                 message: 'Invalid contact ID',
             });
         }
@@ -55,12 +56,14 @@ export const setupServer = () => {
 
             if (!contact) {
                 return res.status(404).json({
+                    status: 404,
                     message: 'Contact not found',
                 });
             }
-
+          
             res.status(200).json({
                 status: 200,
+                message: `Successfully found contact with id ${contactId}!`,
                 data: contact,
             });
         } catch (error) {
