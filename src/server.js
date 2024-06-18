@@ -27,21 +27,17 @@ export const setupServer = () => {
         });
     });
 
-    app.get('/contacts', async (req, res) => {
+    app.get('/contacts', async (req, res, next) => {
         try {
             const contacts = await getAllContacts();
 
-            return res.status(200).json({
+                res.status(200).json({
                 status: 200,
-                data: contacts,
                 message: 'Successfully found contacts',
+                data: contacts,
             });
         } catch (error) {
-            return res.status(500).json({
-                status: 500,
-                message: 'Something went wrong',
-                error: error.message
-            });
+            next(error);
         }
     });
 
@@ -50,6 +46,7 @@ export const setupServer = () => {
 
         if (!mongoose.Types.ObjectId.isValid(contactId)) {
             return res.status(400).json({
+                status: 400,
                 message: 'Invalid contact ID',
             });
         }
@@ -59,33 +56,30 @@ export const setupServer = () => {
 
             if (!contact) {
                 return res.status(404).json({
+                    status: 404,
                     message: 'Contact not found',
                 });
             }
 
-            return res.status(200).json({
+                res.status(200).json({
                 status: 200,
+                message: `Successfully found contact with id ${contactId}!`,
                 data: contact,
             });
         } catch (error) {
-          
-            return res.status(500).json({
-                status: 500,
-                message: 'Something went wrong',
-                error: error.message,
-            });
+            next(error);
         }
     });
 
     app.use("*", (req, res) => {
-        return res.status(404).json({
+            res.status(404).json({
             status: 404,
             message: "Not Found"
         });
     });
 
     app.use((err, req, res) => {
-        return res.status(500).json({
+            res.status(500).json({
             status: 500,
             message: "Something went wrong",
             error: err.message,
