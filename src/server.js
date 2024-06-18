@@ -41,7 +41,7 @@ export const setupServer = () => {
         }
     });
 
-    app.get('/contacts/:contactId', async (req, res, next) => {
+    app.get('/contacts/:contactId', async (req, res) => {
         const { contactId } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(contactId)) {
@@ -62,10 +62,13 @@ export const setupServer = () => {
             res.status(200).json({
                 status: 200,
                 data: contact,
-                message: `Successfully found contact with id ${contactId}!`
             });
         } catch (error) {
-            next(error);
+            return res.status(500).json({
+                status: 500,
+                message: 'Something went wrong',
+                error: error.message,
+            });
         }
     });
 
