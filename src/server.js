@@ -31,8 +31,9 @@ export const setupServer = () => {
         const contacts = await getAllContacts();
 
         res.status(200).json({
-            data: contacts,
+            status: 200,
             message: 'Successfully found contacts',
+            data: contacts,
         });
     });
 
@@ -41,6 +42,7 @@ export const setupServer = () => {
 
         if (!mongoose.Types.ObjectId.isValid(contactId)) {
             return res.status(400).json({
+                status: 400,
                 message: 'Invalid contact ID',
             });
         }
@@ -50,16 +52,19 @@ export const setupServer = () => {
 
             if (!contact) {
                 res.status(404).json({
+                    status: 404,
                     message: 'Contact not found',
                 });
             }
 
             res.status(200).json({
+                status: 200,
+                message: `Successfully found contact with id ${contactId}!`,
                 data: contact,
-                message: `Successfully found contact with id ${contactId}!`
             });
         } catch (error) {
             res.status(500).json({
+                status: 500,
                 message: 'Something went wrong',
                 error: error.message,
             });
@@ -68,12 +73,14 @@ export const setupServer = () => {
 
     app.use("*", (req, res) => {
         res.status(404).json({
+            status: 404,
             message: "Not Found"
         });
     });
 
     app.use((err, req, res) => {
         res.status(500).json({
+            status: 500,
             message: "Something went wrong",
             error: err.message,
         });
