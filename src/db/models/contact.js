@@ -12,7 +12,7 @@ const contactsSchema = new Schema(
         },
         email: {
             type: String,
-            required: true,
+            required: false,
         },
         isFavourite: {
             type: Boolean,
@@ -22,11 +22,12 @@ const contactsSchema = new Schema(
             type: String,
             enum: ['work', 'home', 'personal'],
             default: 'personal',
-            required: true,
+            required: false,
         }
     },
     {
         timestamps: true,
+        versionKey: false,
     },
 );
 
