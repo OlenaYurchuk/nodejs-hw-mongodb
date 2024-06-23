@@ -27,11 +27,17 @@ const parseSortBy = (sortBy) => {
 };
 
 const parseFilterType = (type) => {
-    return type;
+    return type ? type : null;
 };
 
 const parseFilterIsFavourite = (isFavourite) => {
-    return isFavourite === 'true';
+    if (isFavourite === 'true') {
+        return true;
+    } else if (isFavourite === 'false') {
+        return false;
+    } else {
+        return null;
+    }
 };
 
 export const parseSortParams = (query) => {
