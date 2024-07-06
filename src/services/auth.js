@@ -6,12 +6,31 @@ import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/index.js';
 import { SessionsCollection } from '../db/models/session.js';
 
 export const registerUser = async (payload) => {
+    // Check if user with this email already exists
+    const existingUser = await UsersCollection.findOne({ email: payload.email });
+
+    if (existingUser) {
+        throw createHttpError(409, 'Email in use');
+    }
     const encryptedPassword = await bcrypt.hash(payload.password, 10);
 
-    return await UsersCollection.create({
+    const newUser = await UsersCollection.create({
         ...payload,
         password: encryptedPassword,
     });
+
+    const userData = {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        createdAt: newUser.createdAt,
+    };
+
+    return {
+        status: 201,
+        message: 'Successfully registed a user!',
+        data: userData,
+    };
 };
 
 export const loginUser = async (payload) => {
