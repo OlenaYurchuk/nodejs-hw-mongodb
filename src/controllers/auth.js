@@ -1,75 +1,108 @@
-import { registerUser } from "../services/auth.js";
-import { loginUser } from "../services/auth.js";
-import { ONE_DAY } from "../constants/index.js";
-import { logoutUser } from "../services/auth.js";
-import { refreshUsersSession } from "../services/auth.js";
+import { registerUser, findUser } from "../services/auth.js";
+import createHttpError from "http-errors";
+import { compareHash } from "../utils/hash.js";
+import { createSession, findSession, deleteSession } from "../services/session.js";
+
+const setupSession = (res, { refreshToken, refreshTokenValidUntil, _id }) => {
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        expires: refreshTokenValidUntil,
+    });
+
+    res.cookie("sessionId", _id, {
+        httpOnly: true,
+        expires: refreshTokenValidUntil,
+    });
+};
+
 
 export const registerUserController = async (req, res) => {
-    const user = await registerUser(req.body);
+    const { email } = req.body;
+    const user = await findUser({ email });
 
-    res.json({
+    if (user) {
+        throw createHttpError(409, "Email is already in use!");
+    }
+
+    const newUser = await registerUser(req.body);
+
+    const data = {
+        name: newUser.name,
+        email: newUser.email,
+    };
+
+    res.status(201).json({
         status: 201,
         message: 'Successfully registered a user!',
-        data: user,
+        data,
     });
 };
 
 export const loginUserController = async (req, res) => {
-    const session = await loginUser(req.body);
+    const { email, password } = req.body;
+    const user = await findUser({ email });
 
-    res.cookie('refreshToken', session.refreshToken, {
-        httpOnly: true,
-        expires: new Date(Date.now() + ONE_DAY),
-    });
-    res.cookie('sessionId', session._id, {
-        httpOnly: true,
-        expires: new Date(Date.now() + ONE_DAY),
-    });
+    if (!user) {
+        throw createHttpError(404, "Email not found!");
+    }
+
+    const passwordCompare = await compareHash(password, user.password);
+    if (!passwordCompare) {
+        throw createHttpError(401, "Invalid password");
+    }
+
+    const session = await createSession(user._id);
+
+    setupSession(res, session);
 
     res.json({
         status: 200,
         message: 'Successfully logged in an user!',
         data: {
             accessToken: session.accessToken,
-        },
+        }
     });
 };
 
-export const logoutUserController = async (req, res) => {
-    if (req.cookies.sessionId) {
-        await logoutUser(req.cookies.sessionId);
-    }
-
-    res.clearCookie('sessionId');
-    res.clearCookie('refreshToken');
-
-    res.status(204).send();
-};
-
-const setupSession = (res, session) => {
-    res.cookie('refreshToken', session.refreshToken, {
-        httpOnly: true,
-        expires: new Date(Date.now() + ONE_DAY),
-    });
-    res.cookie('sessionId', session._id, {
-        httpOnly: true,
-        expires: new Date(Date.now() + ONE_DAY),
-    });
-};
 
 export const refreshUserSessionController = async (req, res) => {
-    const session = await refreshUsersSession({
-        sessionId: req.cookies.sessionId,
-        refreshToken: req.cookies.refreshToken,
-    });
+    const { refreshToken, sessionId } = req.cookies;
 
-    setupSession(res, session);
+    const currentSession = await findSession({ _id: sessionId, refreshToken });
+
+    if (!currentSession) {
+        throw createHttpError(401, "Session not found");
+    }
+
+    const refreshTokenExpired = new Date() > new Date(currentSession.refreshTokenValidUntil);
+
+    if (refreshTokenExpired) {
+        throw createHttpError(401, "Session is expired");
+    }
+
+    const newSession = await createSession(currentSession.userId);
+
+    setupSession(res, newSession);
 
     res.json({
         status: 200,
-        message: 'Successfully refreshed a session!',
+        message: "Successfully logged in an user!",
         data: {
-            accessToken: session.accessToken,
-        },
+            accessToken: newSession.accessToken,
+        }
     });
+};
+
+ export const logoutUserController = async (req, res) => {
+     const { sessionId } = req.cookies;
+     if (!sessionId) {
+         throw createHttpError(401, "Session not found");
+     }
+
+     await deleteSession({ _id: sessionId });
+
+     res.clearCookie("sessionId");
+     res.clearCookie("refreshToken");
+
+     res.status(204).send();
 };
