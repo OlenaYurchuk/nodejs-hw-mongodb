@@ -3,6 +3,7 @@ import createHttpError from "http-errors";
 import { compareHash } from "../utils/hash.js";
 import { createSession, findSession, deleteSession } from "../services/session.js";
 import { requestResetToken } from "../services/auth.js";
+import { resetPassword } from "../services/auth.js";
 
 const setupSession = (res, { refreshToken, refreshTokenValidUntil, _id }) => {
     res.cookie("refreshToken", refreshToken, {
@@ -110,6 +111,8 @@ export const refreshUserSessionController = async (req, res) => {
 
 export const requestResetEmailController = async (req, res, next) => {
     try {
+        await requestResetToken(req.body.email);
+        
         res.json({
         message: 'Reset password email was successfully sent!',
         status: 200,
@@ -117,5 +120,19 @@ export const requestResetEmailController = async (req, res, next) => {
         });
     } catch (error) {
         next(createHttpError(500, 'Failed to send the email, please, try again later!'));
+    }
+};
+
+export const resetPasswordController = async (req, res, next) => {
+    try {
+        await resetPassword(req.body);
+
+        res.json({
+            message: 'Password was successfully reset!',
+            status: 200,
+            data: {},
+        });
+    } catch (error) {
+        next(createHttpError(401, 'Token is expired or invalid.'));
     }
 };
