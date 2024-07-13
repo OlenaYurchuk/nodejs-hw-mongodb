@@ -119,6 +119,7 @@ export const requestResetEmailController = async (req, res, next) => {
         data: {},
         });
     } catch (error) {
+        console.error('Failed to send reset email:', error);
         next(createHttpError(500, 'Failed to send the email, please, try again later!'));
     }
 };
@@ -133,6 +134,7 @@ export const resetPasswordController = async (req, res, next) => {
             data: {},
         });
     } catch (error) {
+        console.error('Token is expired or invalid:', error);
         next(createHttpError(401, 'Token is expired or invalid.'));
     }
 };
