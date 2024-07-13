@@ -2,6 +2,7 @@ import { registerUser, findUser } from "../services/auth.js";
 import createHttpError from "http-errors";
 import { compareHash } from "../utils/hash.js";
 import { createSession, findSession, deleteSession } from "../services/session.js";
+import { requestResetToken } from "../services/auth.js";
 
 const setupSession = (res, { refreshToken, refreshTokenValidUntil, _id }) => {
     res.cookie("refreshToken", refreshToken, {
@@ -105,4 +106,12 @@ export const refreshUserSessionController = async (req, res) => {
      res.clearCookie("refreshToken");
 
      res.status(204).send();
+ };
+
+export const requestResetEmailController = async (req, res) => {
+    res.json({
+        message: 'Reset password email was successfully sent!',
+        status: 200,
+        data: {},
+    });
 };
