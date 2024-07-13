@@ -108,10 +108,14 @@ export const refreshUserSessionController = async (req, res) => {
      res.status(204).send();
  };
 
-export const requestResetEmailController = async (req, res) => {
-    res.json({
+export const requestResetEmailController = async (req, res, next) => {
+    try {
+        res.json({
         message: 'Reset password email was successfully sent!',
         status: 200,
         data: {},
-    });
+        });
+    } catch (error) {
+        next(createHttpError(500, 'Failed to send the email, please, try again later!'));
+    }
 };
