@@ -58,37 +58,45 @@ export const getContactByIdController = async (req, res, next) => {
 
 export const createContactController = async (req, res, next) => {
     const { _id: userId } = req.user;
+    const { name, email, phoneNumber } = req.body;
+    const photo = req.file;
 
     try {
-        const contactData = { ...req.body, userId };
-        const contact = await createContact(contactData);
+        let photoUrl;
+
+        if (photo) {
+            if (env('ENABLE_CLOUDINARY') === 'true') {
+                photoUrl = await saveFileToCloudinary(photo);
+            } else {
+                photoUrl = await saveFileToUploadDir(photo);
+            }
+        }
+       
+        const newContact = await createContact({userId, name, email, phoneNumber, photo: photoUrl});
+
+        if (!newContact) {
+            throw createHttpError(500, 'Failed to create contact');
+        }
 
         res.status(201).json({
             status: 201,
             message: 'Successfully created a contact!',
-            data: contact,
+            data: newContact,
         });
     } catch (error) {
-        next(error);
+        console.error('Error creating contact:', error);
+        next(createHttpError(500, 'Failed to create contact'));
     }
 };
 
 export const patchContactController = async (req, res, next) => {
     const { _id: userId } = req.user;
     const { contactId } = req.params;
-    const photo = req.file;
-    let photoUrl;
+    
     try {
-        if (photo) {
-            if (env('ENABLE_CLOUDINARY') === 'true') {
-                photoUrl = await saveFileToCloudinary(photo);
-            } else {
-                 photoUrl = await saveFileToUploadDir(photo);
-            }
-        }
-        const result = await updateContact({_id: contactId, userId}, {...req.body, photo: photoUrl});
+        const updatedContact = await updateContact({_id: contactId, userId}, req.body);
 
-        if (!result) {
+        if (!updatedContact) {
             next(createHttpError(404, 'Contact not found'));
             return;
         }
@@ -96,7 +104,7 @@ export const patchContactController = async (req, res, next) => {
         res.status(200).json({
             status: 200,
             message: 'Successfully patched a contact!',
-            data: result.contact,
+            data: updatedContact.contact,
         });
     } catch (error) {
         console.error(`Error patching contact with id ${contactId}`, error);
