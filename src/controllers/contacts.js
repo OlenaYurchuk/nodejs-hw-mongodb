@@ -81,7 +81,10 @@ export const createContactController = async (req, res, next) => {
         res.status(201).json({
             status: 201,
             message: 'Successfully created a contact!',
-            data: newContact,
+            data: {
+                ...newContact,
+                photo: photoUrl
+            }
         });
     } catch (error) {
         console.error('Error creating contact:', error);
@@ -104,7 +107,7 @@ export const patchContactController = async (req, res, next) => {
         res.status(200).json({
             status: 200,
             message: 'Successfully patched a contact!',
-            data: updatedContact.contact,
+            data: updatedContact,
         });
     } catch (error) {
         console.error(`Error patching contact with id ${contactId}`, error);
