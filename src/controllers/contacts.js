@@ -58,11 +58,10 @@ export const getContactByIdController = async (req, res, next) => {
 
 export const createContactController = async (req, res, next) => {
     const { _id: userId } = req.user;
-    const { name, email, phoneNumber } = req.body;
     const photo = req.file;
 
     try {
-        let photoUrl;
+        let photoUrl = "";
 
         if (photo) {
             if (env('ENABLE_CLOUDINARY') === 'true') {
@@ -72,7 +71,11 @@ export const createContactController = async (req, res, next) => {
             }
         }
        
-        const newContact = await createContact({userId, name, email, phoneNumber, photo: photoUrl});
+        const newContact = await createContact({
+            ...req.body,
+            userId, 
+            photo: photoUrl
+        });
 
         if (!newContact) {
             throw createHttpError(500, 'Failed to create contact');
@@ -81,10 +84,7 @@ export const createContactController = async (req, res, next) => {
         res.status(201).json({
             status: 201,
             message: 'Successfully created a contact!',
-            data: {
-                ...newContact,
-                photo: photoUrl
-            }
+            data: newContact
         });
     } catch (error) {
         console.error('Error creating contact:', error);
