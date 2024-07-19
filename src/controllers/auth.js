@@ -4,8 +4,10 @@ import { compareHash } from "../utils/hash.js";
 import { createSession, findSession, deleteSession } from "../services/session.js";
 import { requestResetToken } from "../services/auth.js";
 import { resetPassword } from "../services/auth.js";
+import { generateAuthUrl } from "../utils/googleOAuth2.js";
+import { loginOrSignUpWithGoogle } from "../services/auth.js";
 
-const setupSession = (res, { refreshToken, refreshTokenValidUntil, _id }) => {
+export const setupSession = (res, { refreshToken, refreshTokenValidUntil, _id }) => {
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         expires: refreshTokenValidUntil,
@@ -138,3 +140,28 @@ export const resetPasswordController = async (req, res, next) => {
         next(createHttpError(401, 'Token is expired or invalid.'));
     }
 };
+
+export const getGoogleOAuthUrlController = async (req, res) => {
+    const url = generateAuthUrl();
+    res.json({
+        status: 200,
+        message: 'Successfully get Google OAuth url!',
+        data: {
+            url,
+        },
+    });
+};
+
+export const loginWithGoogleController = async (req, res) => {
+    const session = await loginOrSignUpWithGoogle(req.body.code);
+    setupSession(res, session);
+
+    res.json({
+        status: 200,
+        message: 'Successfully logged in via Google OAuth!',
+        data: {
+            accessToken: session.accessToken,
+        },
+    });
+};
+
