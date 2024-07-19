@@ -13,7 +13,6 @@ import { sendEmail } from "../utils/sendMail.js";
 import { getFullNameFromGoogleTokenPayload, validateCode } from "../utils/googleOAuth2.js";
 import { randomBytes } from "node:crypto";
 import { createSession } from "./session.js";
-import { SessionsCollection } from "../db/models/session.js";
 
 export const findUser = filter => UsersCollection.findOne(filter);
 
@@ -115,8 +114,5 @@ export const loginOrSignUpWithGoogle = async (code) => {
 
     const newSession = createSession();
 
-    return await SessionsCollection.create({
-        userId: user._id,
-        ...newSession,
-    });
+    return newSession;
 };
