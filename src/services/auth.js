@@ -10,6 +10,10 @@ import { hashValue } from '../utils/hash.js';
 import { SMTP, TEMPLATES_DIR } from "../constants/index.js";
 import { env } from '../utils/env.js';
 import { sendEmail } from "../utils/sendMail.js";
+import { getFullNameFromGoogleTokenPayload, validateCode } from "../utils/googleOAuth2.js";
+import { randomBytes } from "node:crypto";
+import { createSession } from "./session.js";
+import { SessionsCollection } from "../db/models/session.js";
 
 export const findUser = filter => UsersCollection.findOne(filter);
 
@@ -89,4 +93,30 @@ export const resetPassword = async (payload) => {
         { _id: user._id },
         { password: encryptedPassword },
     );
+};
+
+export const loginOrSignUpWithGoogle = async (code) => {
+    const loginTicket = await validateCode(code);
+    const payload = loginTicket.getPayload();
+    if (!payload) throw createHttpError(401);
+
+    let user = await UsersCollection.findOne({
+        email: payload.email
+    });
+
+    if (!user) {
+        const password = await bcrypt.hash(randomBytes(10), 10);
+        user = await UsersCollection.create({
+            email: payload.email,
+            name: getFullNameFromGoogleTokenPayload(payload),
+            password,
+        });
+    }
+
+    const newSession = createSession();
+
+    return await SessionsCollection.create({
+        userId: user._id,
+        ...newSession,
+    });
 };
